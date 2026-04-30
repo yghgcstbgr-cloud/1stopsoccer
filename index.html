@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>1StopSoccerNews</title>
+
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+body {
+  background: #0b1220;
+  color: white;
+}
+
+/* HEADER */
+header {
+  padding: 15px;
+  font-size: 20px;
+  font-weight: bold;
+  background: #0f172a;
+  text-align: center;
+}
+
+/* TABS */
+.tabs {
+  display: flex;
+  justify-content: space-around;
+  background: #111827;
+  border-bottom: 1px solid #222;
+}
+
+.tab {
+  padding: 12px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.tab.active {
+  color: #22c55e;
+  border-bottom: 2px solid #22c55e;
+}
+
+/* CONTENT */
+.container {
+  padding: 15px;
+  padding-bottom: 80px;
+}
+
+/* MATCH CARD */
+.match {
+  background: #111827;
+  border-radius: 12px;
+  padding: 15px;
+  margin-bottom: 12px;
+}
+
+.league {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.teams {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+
+.score {
+  font-size: 22px;
+  font-weight: bold;
+}
+
+.live {
+  color: #22c55e;
+  font-size: 12px;
+  margin-top: 5px;
+}
+
+/* NEWS */
+.news {
+  background: #111827;
+  padding: 12px;
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+
+/* NAVBAR */
+.navbar {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  background: #0f172a;
+  display: flex;
+  justify-content: space-around;
+  padding: 10px 0;
+  border-top: 1px solid #222;
+}
+
+.navbar div {
+  text-align: center;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.navbar div:hover {
+  color: #22c55e;
+}
+
+/* PAGES */
+.page {
+  display: none;
+}
+
+.page.active {
+  display: block;
+}
+</style>
+</head>
+
+<body>
+
+<header>⚽ 1StopSoccerNews</header>
+
+<!-- TABS -->
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('matches')">Matches</div>
+  <div class="tab" onclick="switchTab('news')">News</div>
+  <div class="tab" onclick="switchTab('favorites')">Favorites</div>
+</div>
+
+<div class="container">
+
+  <!-- MATCHES -->
+  <div id="matches" class="page active"></div>
+
+  <!-- NEWS -->
+  <div id="news" class="page">
+    <div class="news">🔥 Transfer rumors heating up</div>
+    <div class="news">⚽ Champions League highlights trending</div>
+  </div>
+
+  <!-- FAVORITES -->
+  <div id="favorites" class="page">
+    <p>No favorites yet ⭐</p>
+  </div>
+
+</div>
+
+<!-- NAV -->
+<div class="navbar">
+  <div onclick="switchTab('matches')">🏟️<br>Matches</div>
+  <div onclick="switchTab('news')">📰<br>News</div>
+  <div onclick="switchTab('favorites')">⭐<br>Saved</div>
+</div>
+
+<script>
+const API_KEY = "API-Football";
+
+function switchTab(tab) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(tab).classList.add('active');
+
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+}
+
+async function loadMatches() {
+  const url = "https://v3.football.api-sports.io/fixtures?live=all";
+
+  const res = await fetch(url, {
+    headers: { "x-apisports-key": API_KEY }
+  });
+
+  const data = await res.json();
+  const matches = data.response;
+
+  const container = document.getElementById("matches");
+  container.innerHTML = "";
+
+  if (matches.length === 0) {
+    container.innerHTML = "<p>No live matches ⚽</p>";
+    return;
+  }
+
+  matches.forEach(m => {
+    const card = `
+      <div class="match">
+        <div class="league">${m.league.name}</div>
+
+        <div class="teams">
+          <div>${m.teams.home.name}</div>
+          <div class="score">${m.goals.home ?? 0} - ${m.goals.away ?? 0}</div>
+          <div>${m.teams.away.name}</div>
+        </div>
+
+        <div class="live">● ${m.fixture.status.elapsed}' LIVE</div>
+      </div>
+    `;
+    container.innerHTML += card;
+  });
+}
+
+loadMatches();
+setInterval(loadMatches, 60000);
+</script>
+
+</body>
+</html>
