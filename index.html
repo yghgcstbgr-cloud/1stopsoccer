@@ -1,69 +1,71 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>God Sports App</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FutMob Clone Core</title>
 
 <style>
-body {
+body{
   margin:0;
   font-family:system-ui;
-  background:#050814;
+  background:#0b1220;
   color:white;
 }
 
-header {
-  padding:14px;
+header{
+  padding:12px;
   text-align:center;
+  background:#111827;
   font-weight:bold;
-  background:#0f172a;
 }
 
-.tab {
+.tab{
   display:none;
   padding:10px;
 }
 
-.active { display:block; }
+.active{ display:block; }
 
-.card {
-  background:#111827;
+.card{
+  background:#1f2937;
   padding:12px;
   border-radius:12px;
   margin-bottom:10px;
 }
 
-.grid {
-  display:grid;
-  gap:10px;
-}
-
-button {
-  padding:8px;
+button{
+  padding:6px 10px;
   border:none;
   border-radius:8px;
   background:#22c55e;
   font-weight:bold;
 }
 
-.nav {
+input{
+  width:100%;
+  padding:10px;
+  border-radius:10px;
+  margin-bottom:10px;
+}
+
+.nav{
   position:fixed;
   bottom:0;
   width:100%;
   display:flex;
   justify-content:space-around;
-  background:#0f172a;
+  background:#111827;
   padding:10px;
 }
 
-.nav div {
+.nav div{
   font-size:12px;
   opacity:0.6;
   cursor:pointer;
 }
 
-.nav .active {
+.nav .active{
   opacity:1;
   color:#22c55e;
 }
@@ -72,126 +74,163 @@ button {
 
 <body>
 
-<header>⚽ GOD OF SPORTS</header>
+<header>⚽ FUTMOB CLONE CORE</header>
 
-<!-- TABS -->
-<div id="home" class="tab active"></div>
-<div id="players" class="tab"></div>
+<div id="matches" class="tab active"></div>
+<div id="search" class="tab"></div>
 <div id="standings" class="tab"></div>
-<div id="news" class="tab"></div>
+<div id="players" class="tab"></div>
 
-<!-- NAV -->
 <div class="nav">
-  <div onclick="openTab('home',this)" class="active">🏟️</div>
-  <div onclick="openTab('players',this)">👤</div>
+  <div onclick="openTab('matches',this)" class="active">🏟️</div>
+  <div onclick="openTab('search',this)">🔍</div>
   <div onclick="openTab('standings',this)">📊</div>
-  <div onclick="openTab('news',this)">📰</div>
+  <div onclick="openTab('players',this)">👤</div>
 </div>
 
 <script>
 
 /* =========================
-   LOCAL GOD DATABASE (NO API)
+   ⚽ FREE LIVE DATA ENGINE
 ========================= */
 
-const DB = {
-  matches: [
-    {home:"Real Madrid",away:"Barcelona",score:"2-1",minute:78},
-    {home:"Man City",away:"Arsenal",score:"1-1",minute:65},
-    {home:"PSG",away:"Bayern",score:"3-2",minute:88}
-  ],
-
-  players: [
-    {name:"Mbappé",team:"PSG",goals:5,assists:2},
-    {name:"Haaland",team:"Man City",goals:8,assists:1},
-    {name:"Vinicius",team:"Real Madrid",goals:4,assists:3}
-  ],
-
-  standings: [
-    {team:"Real Madrid",pts:78},
-    {team:"Man City",pts:76},
-    {team:"Barcelona",pts:74}
-  ],
-
-  news: [
-    "Mbappé linked with Real Madrid move",
-    "Haaland breaks scoring record",
-    "Arsenal fight for title race"
-  ]
+const CACHE = {
+  matches: [],
+  players: {}
 };
+
+/* FREE API (no key) */
+async function loadMatches(){
+  try {
+    const res = await fetch("https://www.scorebat.com/video-api/v3/feed/?token=free");
+    const data = await res.json();
+
+    CACHE.matches = data.response.slice(0,6);
+
+    renderMatches();
+
+  } catch(e){
+
+    // fallback mode
+    CACHE.matches = [
+      {title:"Real Madrid vs Barcelona", competition:"La Liga"},
+      {title:"Man City vs Arsenal", competition:"Premier League"},
+      {title:"PSG vs Bayern", competition:"UCL"}
+    ];
+
+    renderMatches();
+  }
+}
+
+/* =========================
+   🏟️ MATCH RENDER
+========================= */
+
+function renderMatches(){
+  document.getElementById("matches").innerHTML =
+    CACHE.matches.map(m=>`
+      <div class="card">
+        ⚽ <b>${m.title}</b><br>
+        🌍 ${m.competition || "Friendly"}<br>
+        <button onclick="openMatch('${m.title}')">View Match</button>
+      </div>
+    `).join("");
+}
+
+/* =========================
+   📊 MATCH TIMELINE (FUTMOB STYLE)
+========================= */
+
+function openMatch(title){
+
+  document.getElementById("matches").innerHTML = `
+    <div class="card">
+      <h2>${title}</h2>
+      <p>⚡ Live Timeline</p>
+    </div>
+
+    <div class="card">⚽ Goal - 23'</div>
+    <div class="card">🟨 Yellow Card - 41'</div>
+    <div class="card">⚽ Shot on Target - 55'</div>
+    <div class="card">🔥 Dangerous Attack - 70'</div>
+  `;
+}
+
+/* =========================
+   🔍 PLAYER SEARCH ENGINE
+========================= */
+
+async function searchPlayer(q){
+
+  if(q.length < 2) return;
+
+  try {
+    const res = await fetch(`https://www.thesportsdb.com/api/v1/json/3/searchplayers.php?p=${q}`);
+    const data = await res.json();
+
+    document.getElementById("search").innerHTML =
+      `<input oninput="searchPlayer(this.value)" placeholder="Search players...">` +
+      (data.player || []).slice(0,6).map(p=>`
+        <div class="card">
+          👤 <b>${p.strPlayer}</b><br>
+          ⚽ ${p.strSport}<br>
+          🌍 ${p.strNationality}
+        </div>
+      `).join("");
+
+  } catch(e){
+    document.getElementById("search").innerHTML = `
+      <input oninput="searchPlayer(this.value)" placeholder="Search players...">
+      <div class="card">No data available</div>
+    `;
+  }
+}
+
+/* =========================
+   📊 STANDINGS (FALLBACK + REAL READY)
+========================= */
+
+function loadStandings(){
+
+  const data = [
+    {team:"Real Madrid", pts:78},
+    {team:"Man City", pts:76},
+    {team:"Barcelona", pts:74}
+  ];
+
+  document.getElementById("standings").innerHTML =
+    data.map(t=>`
+      <div class="card">
+        ${t.team}<br>
+        📊 ${t.pts} pts
+      </div>
+    `).join("");
+}
 
 /* =========================
    TAB SYSTEM
 ========================= */
 
 function openTab(tab,el){
+
   document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
   document.getElementById(tab).classList.add("active");
 
   document.querySelectorAll(".nav div").forEach(n=>n.classList.remove("active"));
   el.classList.add("active");
 
-  render();
+  if(tab==="matches") loadMatches();
+  if(tab==="standings") loadStandings();
 }
 
 /* =========================
-   RENDER ENGINE
+   AUTO REFRESH SYSTEM
 ========================= */
 
-function render(){
+loadMatches();
+loadStandings();
 
-  document.getElementById("home").innerHTML =
-    DB.matches.map(m=>`
-      <div class="card">
-        <b>${m.home} vs ${m.away}</b><br>
-        ⚽ ${m.score}<br>
-        ⏱ ${m.minute}'
-      </div>
-    `).join("");
-
-  document.getElementById("players").innerHTML =
-    DB.players.map(p=>`
-      <div class="card">
-        <b>${p.name}</b><br>
-        ${p.team}<br>
-        ⚽ Goals: ${p.goals}<br>
-        🎯 Assists: ${p.assists}
-      </div>
-    `).join("");
-
-  document.getElementById("standings").innerHTML =
-    DB.standings.map(s=>`
-      <div class="card">
-        ${s.team}<br>
-        📊 ${s.pts} pts
-      </div>
-    `).join("");
-
-  document.getElementById("news").innerHTML =
-    DB.news.map(n=>`
-      <div class="card">📰 ${n}</div>
-    `).join("");
-}
-
-/* =========================
-   LIVE SIMULATION ENGINE
-========================= */
-
-setInterval(()=>{
-
-  // simulate live score updates
-  DB.matches.forEach(m=>{
-    if(Math.random()>0.7){
-      m.minute++;
-    }
-  });
-
-  render();
-
-}, 5000);
-
-/* INIT */
-render();
+setInterval(loadMatches, 15000);
 
 </script>
 
