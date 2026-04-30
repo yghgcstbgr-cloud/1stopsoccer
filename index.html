@@ -1,63 +1,52 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>1StopSoccerNews</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>God Sports App</title>
 
 <style>
 body {
   margin:0;
   font-family:system-ui;
-  background:#0b1220;
+  background:#050814;
   color:white;
 }
 
-/* HEADER */
 header {
-  padding:15px;
+  padding:14px;
   text-align:center;
   font-weight:bold;
-  background:rgba(15,23,42,0.8);
-  backdrop-filter:blur(10px);
+  background:#0f172a;
 }
 
-/* PAGES */
-.page {
+.tab {
   display:none;
   padding:10px;
-  animation:fade .3s ease;
-}
-
-@keyframes fade {
-  from {opacity:0; transform:translateY(10px);}
-  to {opacity:1;}
 }
 
 .active { display:block; }
 
-/* CARD */
 .card {
-  background:rgba(17,24,39,0.7);
-  backdrop-filter:blur(10px);
+  background:#111827;
   padding:12px;
   border-radius:12px;
   margin-bottom:10px;
 }
 
-.live { color:#22c55e; font-size:12px; }
-.small { color:#9ca3af; font-size:12px; }
-
-/* INPUT */
-input {
-  width:100%;
-  padding:10px;
-  border:none;
-  border-radius:10px;
-  margin-bottom:10px;
+.grid {
+  display:grid;
+  gap:10px;
 }
 
-/* BOTTOM NAV */
+button {
+  padding:8px;
+  border:none;
+  border-radius:8px;
+  background:#22c55e;
+  font-weight:bold;
+}
+
 .nav {
   position:fixed;
   bottom:0;
@@ -65,260 +54,145 @@ input {
   display:flex;
   justify-content:space-around;
   background:#0f172a;
-  padding:10px 0;
+  padding:10px;
 }
 
 .nav div {
-  cursor:pointer;
   font-size:12px;
   opacity:0.6;
+  cursor:pointer;
 }
 
 .nav .active {
   opacity:1;
   color:#22c55e;
 }
-
-/* TABLE */
-.row {
-  display:flex;
-  justify-content:space-between;
-  padding:6px 0;
-  border-bottom:1px solid #1f2937;
-}
-
-.team {
-  display:flex;
-  align-items:center;
-  gap:5px;
-}
-.team img { width:18px; }
-
 </style>
 </head>
 
 <body>
 
-<header>⚽ 1StopSoccerNews</header>
+<header>⚽ GOD OF SPORTS</header>
 
-<!-- PAGES -->
-<div id="matches" class="page active"></div>
+<!-- TABS -->
+<div id="home" class="tab active"></div>
+<div id="players" class="tab"></div>
+<div id="standings" class="tab"></div>
+<div id="news" class="tab"></div>
 
-<div id="search" class="page">
-  <input placeholder="Search player..." oninput="searchPlayer(this.value)">
-  <div id="searchResults"></div>
-</div>
-
-<div id="news" class="page"></div>
-<div id="trending" class="page"></div>
-
-<div id="trophies" class="page">
-  <input placeholder="Search league..." oninput="searchLeague(this.value)">
-  <div id="trophyResults"></div>
-</div>
-
-<div id="standings" class="page">
-  <input placeholder="Search league..." oninput="searchStandings(this.value)">
-  <div id="standingsResults"></div>
-</div>
-
-<div id="cards" class="page"></div>
-
-<!-- NAV BAR -->
+<!-- NAV -->
 <div class="nav">
-  <div onclick="switchTab('matches',this)" class="active">🏟️</div>
-  <div onclick="switchTab('search',this)">🔍</div>
-  <div onclick="switchTab('news',this)">📰</div>
-  <div onclick="switchTab('trending',this)">🔥</div>
-  <div onclick="switchTab('standings',this)">📊</div>
-  <div onclick="switchTab('trophies',this)">🏆</div>
+  <div onclick="openTab('home',this)" class="active">🏟️</div>
+  <div onclick="openTab('players',this)">👤</div>
+  <div onclick="openTab('standings',this)">📊</div>
+  <div onclick="openTab('news',this)">📰</div>
 </div>
 
 <script>
-const API_KEY = "f48c2b32ba7f8a63fecc8cb926017919";
-const NEWS_KEY = "61e224ae25b941659e2efdcf86b8203a";
 
-let teamCount = {};
-let cardList = [];
+/* =========================
+   LOCAL GOD DATABASE (NO API)
+========================= */
 
-/* NAV SWITCH */
-function switchTab(tab,el){
-  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+const DB = {
+  matches: [
+    {home:"Real Madrid",away:"Barcelona",score:"2-1",minute:78},
+    {home:"Man City",away:"Arsenal",score:"1-1",minute:65},
+    {home:"PSG",away:"Bayern",score:"3-2",minute:88}
+  ],
+
+  players: [
+    {name:"Mbappé",team:"PSG",goals:5,assists:2},
+    {name:"Haaland",team:"Man City",goals:8,assists:1},
+    {name:"Vinicius",team:"Real Madrid",goals:4,assists:3}
+  ],
+
+  standings: [
+    {team:"Real Madrid",pts:78},
+    {team:"Man City",pts:76},
+    {team:"Barcelona",pts:74}
+  ],
+
+  news: [
+    "Mbappé linked with Real Madrid move",
+    "Haaland breaks scoring record",
+    "Arsenal fight for title race"
+  ]
+};
+
+/* =========================
+   TAB SYSTEM
+========================= */
+
+function openTab(tab,el){
+  document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
   document.getElementById(tab).classList.add("active");
 
   document.querySelectorAll(".nav div").forEach(n=>n.classList.remove("active"));
   el.classList.add("active");
 
-  if(tab==="matches") loadMatches();
-  if(tab==="news") loadNews();
-  if(tab==="trending") showTrending();
-  if(tab==="cards") showCards();
+  render();
 }
 
-/* MATCHES */
-async function loadMatches(){
-  const today=new Date().toISOString().split("T")[0];
+/* =========================
+   RENDER ENGINE
+========================= */
 
-  const res=await fetch(`https://corsproxy.io/?https://v3.football.api-sports.io/fixtures?date=${today}&live=all`,
-  {headers:{"x-apisports-key":API_KEY}});
+function render(){
 
-  const data=await res.json();
-  const c=document.getElementById("matches");
-  c.innerHTML="<h2>Live Matches</h2>";
-
-  teamCount={};
-  cardList=[];
-
-  data.response.forEach(m=>{
-    teamCount[m.teams.home.name]=(teamCount[m.teams.home.name]||0)+1;
-
-    c.innerHTML+=`
+  document.getElementById("home").innerHTML =
+    DB.matches.map(m=>`
       <div class="card">
-        <div class="small">${m.league.name}</div>
-        <b>${m.teams.home.name} vs ${m.teams.away.name}</b><br>
-        ${m.goals.home ?? 0} - ${m.goals.away ?? 0}<br>
-        <span class="live">${m.fixture.status.short}</span><br>
-        <button onclick="loadPlayers(${m.fixture.id})">Stats</button>
-      </div>`;
-  });
+        <b>${m.home} vs ${m.away}</b><br>
+        ⚽ ${m.score}<br>
+        ⏱ ${m.minute}'
+      </div>
+    `).join("");
+
+  document.getElementById("players").innerHTML =
+    DB.players.map(p=>`
+      <div class="card">
+        <b>${p.name}</b><br>
+        ${p.team}<br>
+        ⚽ Goals: ${p.goals}<br>
+        🎯 Assists: ${p.assists}
+      </div>
+    `).join("");
+
+  document.getElementById("standings").innerHTML =
+    DB.standings.map(s=>`
+      <div class="card">
+        ${s.team}<br>
+        📊 ${s.pts} pts
+      </div>
+    `).join("");
+
+  document.getElementById("news").innerHTML =
+    DB.news.map(n=>`
+      <div class="card">📰 ${n}</div>
+    `).join("");
 }
 
-/* PLAYER STATS */
-async function loadPlayers(id){
-  const res=await fetch(`https://corsproxy.io/?https://v3.football.api-sports.io/fixtures/players?fixture=${id}`,
-  {headers:{"x-apisports-key":API_KEY}});
+/* =========================
+   LIVE SIMULATION ENGINE
+========================= */
 
-  const data=await res.json();
-  const c=document.getElementById("matches");
-  c.innerHTML="<h2>Player Stats</h2>";
+setInterval(()=>{
 
-  data.response.forEach(team=>{
-    c.innerHTML+=`<h3>${team.team.name}</h3>`;
-    team.players.slice(0,8).forEach(p=>{
-      const s=p.statistics[0];
-
-      if(s.cards.red||s.cards.yellow){
-        cardList.push({name:p.player.name,team:team.team.name,y:s.cards.yellow,r:s.cards.red});
-      }
-
-      c.innerHTML+=`<div class="card">${p.player.name}<br>⚽ ${s.goals.total||0}</div>`;
-    });
-  });
-}
-
-/* SEARCH */
-async function searchPlayer(q){
-  if(q.length<3)return;
-
-  const res=await fetch(`https://corsproxy.io/?https://v3.football.api-sports.io/players?search=${q}`,
-  {headers:{"x-apisports-key":API_KEY}});
-
-  const data=await res.json();
-  const c=document.getElementById("searchResults");
-  c.innerHTML="";
-
-  data.response.slice(0,10).forEach(p=>{
-    c.innerHTML+=`<div class="card">${p.player.name}</div>`;
-  });
-}
-
-/* NEWS */
-async function loadNews(){
-  const res=await fetch(`https://newsapi.org/v2/everything?q=soccer&apiKey=${NEWS_KEY}`);
-  const data=await res.json();
-  const c=document.getElementById("news");
-
-  c.innerHTML="";
-  data.articles.forEach(a=>{
-    c.innerHTML+=`<div class="card">${a.title}</div>`;
-  });
-}
-
-/* TRENDING */
-function showTrending(){
-  const c=document.getElementById("trending");
-  c.innerHTML="<h2>Trending</h2>";
-
-  Object.entries(teamCount)
-  .sort((a,b)=>b[1]-a[1])
-  .slice(0,10)
-  .forEach(([t,n])=>{
-    c.innerHTML+=`<div class="card">${t}</div>`;
-  });
-}
-
-/* TROPHIES */
-async function searchLeague(q){
-  if(q.length<3)return;
-
-  const res=await fetch(`https://corsproxy.io/?https://v3.football.api-sports.io/leagues?search=${q}`,
-  {headers:{"x-apisports-key":API_KEY}});
-
-  const data=await res.json();
-  const c=document.getElementById("trophyResults");
-  c.innerHTML="";
-
-  data.response.forEach(l=>{
-    c.innerHTML+=`<div class="card">${l.league.name}
-    <button onclick="loadWinners(${l.league.id})">View</button></div>`;
-  });
-}
-
-async function loadWinners(id){
-  const c=document.getElementById("trophyResults");
-  c.innerHTML="<h2>Winners</h2>";
-
-  for(let s=2024;s>=2020;s--){
-    const res=await fetch(`https://corsproxy.io/?https://v3.football.api-sports.io/standings?league=${id}&season=${s}`,
-    {headers:{"x-apisports-key":API_KEY}});
-
-    const d=await res.json();
-    const w=d.response?.[0]?.league?.standings?.[0]?.[0];
-
-    if(w){
-      c.innerHTML+=`<div class="card">${s} - ${w.team.name}</div>`;
+  // simulate live score updates
+  DB.matches.forEach(m=>{
+    if(Math.random()>0.7){
+      m.minute++;
     }
-  }
-}
-
-/* STANDINGS */
-async function searchStandings(q){
-  if(q.length<3)return;
-
-  const res=await fetch(`https://corsproxy.io/?https://v3.football.api-sports.io/leagues?search=${q}`,
-  {headers:{"x-apisports-key":API_KEY}});
-
-  const data=await res.json();
-  const c=document.getElementById("standingsResults");
-
-  c.innerHTML="";
-  data.response.forEach(l=>{
-    c.innerHTML+=`<div class="card">${l.league.name}
-    <button onclick="loadStandings(${l.league.id})">Table</button></div>`;
   });
-}
 
-async function loadStandings(id){
-  const res=await fetch(`https://corsproxy.io/?https://v3.football.api-sports.io/standings?league=${id}&season=2024`,
-  {headers:{"x-apisports-key":API_KEY}});
+  render();
 
-  const data=await res.json();
-  const table=data.response?.[0]?.league?.standings?.[0];
-  const c=document.getElementById("standingsResults");
-
-  c.innerHTML="<h2>Table</h2>";
-  table.forEach(t=>{
-    c.innerHTML+=`
-    <div class="row">
-      <div class="team">${t.rank}. ${t.team.name}</div>
-      <div>${t.points}</div>
-    </div>`;
-  });
-}
+}, 5000);
 
 /* INIT */
-loadMatches();
-setInterval(loadMatches,30000);
+render();
+
 </script>
 
 </body>
